@@ -1,0 +1,91 @@
+!pip install ultralytics opencv-python pillow numpy
+from google.colab import files
+
+uploaded = files.upload()
+
+image_path = list(uploaded.keys())[0]
+print("Uploaded:", image_path)
+
+import cv2
+import numpy as np
+from ultralytics import YOLO
+from google.colab.patches import cv2_imshow
+
+model = YOLO("yolov8n.pt")
+
+img = cv2.imread(image_path)
+
+results = model(img)
+
+car_count = 0
+people_count = 0
+
+for result in results:
+    boxes = result.boxes
+
+    for box in boxes:
+        cls = int(box.cls[0])
+        conf = float(box.conf[0])
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+        if cls == 2:
+            car_count += 1
+
+            car_crop = img[y1:y2, x1:x2]
+
+            if car_crop.size > 0:
+
+                hsv = cv2.cvtColor(car_crop, cv2.COLOR_BGR2HSV)
+
+                lower_blue = np.array([100, 50, 50])
+                upper_blue = np.array([140, 255, 255])
+
+                mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+                blue_pixels = cv2.countNonZero(mask)
+                total_pixels = car_crop.shape[0] * car_crop.shape[1]
+
+                blue_ratio = blue_pixels / total_pixels
+
+                if blue_ratio > 0.10:
+                    color = (0, 0, 255)  # Red box
+                    label = "Blue Car"
+                else:
+                    color = (255, 0, 0)  # Blue box
+                    label = "Other Car"
+
+                cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+                cv2.putText(img, label, (x1, y1-10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.6, color, 2)
+
+        elif cls == 0:
+            people_count += 1
+
+            cv2.rectangle(img,
+                          (x1, y1),
+                          (x2, y2),
+                          (0,255,0),
+                          2)
+
+cv2.putText(img,
+            f"Cars: {car_count}",
+            (20,40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0,255,255),
+            2)
+
+cv2.putText(img,
+            f"People: {people_count}",
+            (20,80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0,255,255),
+            2)
+
+print("Total Cars:", car_count)
+print("Total People:", people_count)
+
+cv2_imshow(img)
