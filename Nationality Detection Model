@@ -1,0 +1,116 @@
+!pip install gradio deepface opencv-python pillow tensorflow tf-keras
+import gradio as gr
+from deepface import DeepFace
+import cv2
+import numpy as np
+def detect_details(image, nationality):
+
+    try:
+
+        result = DeepFace.analyze(
+            image,
+            actions=['age', 'emotion'],
+            enforce_detection=False
+        )[0]
+
+        age = result['age']
+        emotion = result['dominant_emotion']
+
+        img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        h, w, _ = img.shape
+
+        lower_part = img[h//2:, :]
+
+        avg_color = np.mean(lower_part, axis=(0,1))
+
+        b, g, r = avg_color
+
+        if r > g and r > b:
+            dress_color = "Red"
+        elif g > r and g > b:
+            dress_color = "Green"
+        elif b > r and b > g:
+            dress_color = "Blue"
+        else:
+            dress_color = "Mixed"
+
+        if nationality == "Indian":
+
+            output = f"""
+Nationality : Indian
+
+Age : {age}
+
+Emotion : {emotion}
+
+Dress Color : {dress_color}
+"""
+
+        elif nationality == "United States":
+
+            output = f"""
+Nationality : United States
+
+Age : {age}
+
+Emotion : {emotion}
+"""
+
+        elif nationality == "African":
+
+            output = f"""
+Nationality : African
+
+Emotion : {emotion}
+
+Dress Color : {dress_color}
+"""
+
+        else:
+
+            output = f"""
+Nationality : Other
+
+Emotion : {emotion}
+"""
+
+        return output
+
+    except Exception as e:
+
+        return str(e)
+interface = gr.Interface(
+
+    fn=detect_details,
+
+    inputs=[
+
+        gr.Image(
+            type="numpy",
+            label="Upload Image"
+        ),
+
+        gr.Dropdown(
+            ["Indian",
+             "United States",
+             "African",
+             "Other"],
+            label="Select Nationality"
+        )
+
+    ],
+
+    outputs=gr.Textbox(
+        label="Prediction Results",
+        lines=10
+    ),
+
+    title="Nationality Detection System",
+
+    description="""
+Upload an image and select nationality.
+The system predicts age, emotion and dress colour.
+"""
+)
+interface.launch()
