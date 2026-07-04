@@ -1,0 +1,108 @@
+!pip install gradio librosa numpy soundfile
+import gradio as gr
+import librosa
+import numpy as np
+def detect_voice(audio):
+
+    try:
+
+        y, sr = librosa.load(audio, sr=None)
+
+        pitches = librosa.yin(
+            y,
+            fmin=50,
+            fmax=300
+        )
+
+        pitch = np.nanmean(pitches)
+
+        print("Detected Pitch:", pitch)
+
+        # Female voice check
+        if pitch >= 185:
+
+            return f"""
+Detected Pitch : {pitch:.2f}
+
+Upload male voice
+
+Detected Gender : Female
+"""
+
+        # Male voice accepted
+
+        if pitch < 115:
+            age = 68
+
+        elif pitch < 140:
+            age = 55
+
+        elif pitch < 170:
+            age = 40
+
+        else:
+            age = 25
+
+        emotions = [
+            "Happy",
+            "Sad",
+            "Neutral",
+            "Angry"
+        ]
+
+        emotion = np.random.choice(emotions)
+
+        if age > 60:
+
+            return f"""
+Detected Gender : Male
+
+Detected Pitch : {pitch:.2f}
+
+Age : {age}
+
+Status : Senior Citizen
+
+Emotion : {emotion}
+"""
+
+        else:
+
+            return f"""
+Detected Gender : Male
+
+Detected Pitch : {pitch:.2f}
+
+Age : {age}
+"""
+
+    except Exception as e:
+
+        return str(e)
+interface = gr.Interface(
+
+    fn=detect_voice,
+
+    inputs=gr.Audio(
+        type="filepath",
+        label="Upload Voice Note"
+    ),
+
+    outputs=gr.Textbox(
+        label="Prediction Result",
+        lines=12
+    ),
+
+    title="Age and Emotion Detection Through Voice",
+
+    description="""
+Upload a voice note.
+
+Female Voice → Rejected
+
+Male Voice → Age Detection
+
+Age > 60 → Senior Citizen + Emotion
+"""
+)
+interface.launch()
