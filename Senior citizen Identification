@@ -1,0 +1,106 @@
+!pip install deepface opencv-python pandas tf-keras tensorflow
+import cv2
+import pandas as pd
+from deepface import DeepFace
+from datetime import datetime
+import os
+
+if not os.path.exists("visitors.csv"):
+
+    df = pd.DataFrame(
+        columns=[
+            "Age",
+            "Gender",
+            "Senior Citizen",
+            "Visit Time"
+        ]
+    )
+
+    df.to_csv(
+        "visitors.csv",
+        index=False
+    )
+from google.colab import files
+
+uploaded = files.upload()
+
+video_path = "mall_video.mp4"
+
+cap = cv2.VideoCapture(video_path)
+
+while True:
+
+    ret, frame = cap.read()
+
+    if not ret:
+        break
+
+    try:
+
+        result = DeepFace.analyze(
+            frame,
+            actions=[
+                'age',
+                'gender'
+            ],
+            enforce_detection=False
+        )
+
+        if isinstance(result, list):
+            result = result[0]
+
+        age = int(result["age"])
+
+        gender = result["dominant_gender"]
+
+        senior = "Yes" if age > 60 else "No"
+
+        visit_time = datetime.now()
+
+        data = pd.DataFrame([{
+            "Age": age,
+            "Gender": gender,
+            "Senior Citizen": senior,
+            "Visit Time": visit_time
+        }])
+
+        data.to_csv(
+            "visitors.csv",
+            mode="a",
+            header=False,
+            index=False
+        )
+
+        text = f"{gender} Age:{age}"
+
+        if senior == "Yes":
+            text += " Senior Citizen"
+
+        cv2.putText(
+            frame,
+            text,
+            (20,40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0,255,0),
+            2
+        )
+
+    except:
+        pass
+
+    cv2.imshow(
+        "Senior Citizen Detection",
+        frame
+    )
+
+    if cv2.waitKey(1) == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+import pandas as pd
+
+df = pd.read_csv("visitors.csv")
+
+print(df.head())
