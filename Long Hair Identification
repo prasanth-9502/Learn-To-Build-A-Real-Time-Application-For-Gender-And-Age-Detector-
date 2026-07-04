@@ -1,0 +1,81 @@
+!pip install gradio deepface opencv-python pillow tf-keras tensorflow
+import gradio as gr
+from deepface import DeepFace
+import cv2
+import numpy as np
+def detect_gender_logic(image, hair_type):
+
+    try:
+
+        result = DeepFace.analyze(
+            image,
+            actions=['age','gender'],
+            enforce_detection=False
+        )[0]
+
+        age = result['age']
+
+        actual_gender = result['dominant_gender']
+
+        if 20 <= age <= 30:
+
+            if hair_type == "Long Hair":
+                predicted_gender = "Female"
+
+            else:
+                predicted_gender = "Male"
+
+        else:
+
+            predicted_gender = actual_gender
+
+        output = f"""
+Age : {age}
+
+Hair Type : {hair_type}
+
+Actual Gender : {actual_gender}
+
+Predicted Gender : {predicted_gender}
+"""
+
+        return output
+
+    except Exception as e:
+
+        return str(e)
+interface = gr.Interface(
+
+    fn=detect_gender_logic,
+
+    inputs=[
+
+        gr.Image(
+            type="numpy",
+            label="Upload Image"
+        ),
+
+        gr.Radio(
+            ["Long Hair","Short Hair"],
+            label="Select Hair Type"
+        )
+
+    ],
+
+    outputs=gr.Textbox(
+        label="Prediction Result",
+        lines=10
+    ),
+
+    title="Long Hair Identification System",
+
+    description="""
+Age 20-30:
+Long Hair → Female
+Short Hair → Male
+
+Outside 20-30:
+Actual Gender is used.
+"""
+)
+interface.launch()
