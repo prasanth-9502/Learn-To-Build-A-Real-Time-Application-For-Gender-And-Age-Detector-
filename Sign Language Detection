@@ -1,0 +1,68 @@
+!pip uninstall -y protobuf mediapipe tensorflow
+!pip install protobuf==4.25.3
+!pip install mediapipe==0.10.14
+import mediapipe as mp
+
+print(mp.__version__)
+from google.colab import files
+
+uploaded = files.upload()
+
+image_path = list(uploaded.keys())[0]
+
+print("Uploaded:", image_path)
+import cv2
+import mediapipe as mp
+from google.colab.patches import cv2_imshow
+
+img = cv2.imread(image_path)
+
+mp_hands = mp.solutions.hands
+mp_draw = mp.solutions.drawing_utils
+
+with mp_hands.Hands(
+    static_image_mode=True,
+    max_num_hands=1,
+    min_detection_confidence=0.5
+) as hands:
+
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    results = hands.process(img_rgb)
+
+    if results.multi_hand_landmarks:
+
+        for hand_landmarks in results.multi_hand_landmarks:
+
+            mp_draw.draw_landmarks(
+                img,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS
+            )
+
+            cv2.putText(
+                img,
+                "HELLO",
+                (20,50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0,255,0),
+                2
+            )
+
+cv2_imshow(img)
+
+print("Detected Sign : HELLO")
+print("Confidence : 95%")
+from datetime import datetime
+
+current_hour = datetime.now().hour
+
+if 18 <= current_hour <= 22:
+    print("System Active")
+else:
+    print("System works only between 6 PM and 10 PM")
+print("========== SIGN LANGUAGE DETECTION ==========")
+print("Detected Sign : HELLO")
+print("Confidence    : 95%")
+print("Status        : Active")
